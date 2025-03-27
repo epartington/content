@@ -1,0 +1,353 @@
+beta: true
+category: Utilities
+commonfields:
+  id: PaloAltoNetworksAIRuntimeAPI
+  version: -1
+configuration:
+- defaultvalue: https://www.example.com
+  display: Server URL
+  name: url
+  required: true
+  type: 0
+- defaultvalue: 'false'
+  display: Use system proxy settings
+  name: proxy
+  required: false
+  type: 8
+- defaultvalue: 'false'
+  display: Trust any certificate (not secure)
+  name: insecure
+  required: false
+  type: 8
+- display: API Key
+  name: api_key
+  required: true
+  type: 4
+- display: AIRS API Profile Name for URL Lookups
+  name: profile_name_url
+  required: false
+  type: 0
+- additionalinfo: If selected, when running the !url command, the command will execute using pan-os with PAN_DB (with applied filters). The URL filtering categories determine DBot score (malicious, suspicious, benign).
+  display: Use URL Filtering for auto enrichment
+  name: use_url_filtering
+  required: false
+  type: 8
+- defaultvalue: B - Usually reliable
+  display: Source Reliability
+  name: integrationReliability
+  options:
+  - A+ - 3rd party enrichment
+  - A - Completely reliable
+  - B - Usually reliable
+  - C - Fairly reliable
+  - D - Not usually reliable
+  - E - Unreliable
+  - F - Reliability cannot be judged
+  required: false
+  type: 15
+- defaultvalue: high-risk,medium-risk,hacking,proxy-avoidance-and-anonymizers
+  display: Predefined Suspicious Categories
+  name: predefined_suspicious
+  options:
+  - high-risk
+  - medium-risk
+  - hacking
+  - proxy-avoidance-and-anonymizers
+  required: false
+  type: 16
+- defaultvalue: phishing,command-and-control,malware,ransomware,scanning-activity,compromised-website
+  display: Predefined Malicious Categories
+  name: predefined_malicious
+  options:
+  - phishing
+  - command-and-control
+  - malware
+  - ransomware
+  - scanning-activity
+  - compromised-website
+  required: false
+  type: 16
+contentitemexportablefields:
+  contentitemfields:
+    definitionid: ''
+    fromServerVersion: ''
+    itemVersion: ''
+    packID: ad512282-c63c-4313-842f-fb1185127d32
+    packName: PaloAltoNetworksAIRuntimeAPI Contribution Pack
+    prevname: ''
+    propagationLabels:
+    - all
+    toServerVersion: ''
+description: "v0.3 Integration\nAI Runtime Security: API Intercept\n\nThis collection provides endpoints to interact with Palo Alto Networks AI Runtime Security (AIRS) service. The API intercept allows you to scan and monitor AI interactions to detect various security threats including prompt injection, malicious URLs, sensitive data exposure, toxic content, malicious code, and more."
+display: Palo Alto Networks AI Runtime API
+name: PaloAltoNetworksAIRuntimeAPI
+script:
+  commands:
+  - arguments:
+    - name: tr_id
+    - name: profile_name
+    - name: profile_id
+    - defaultValue: XSOAR-Integration
+      name: app_name
+    - defaultValue: XSOAR
+      name: app_user
+    - name: ai_model
+    - name: prompt
+    - name: response
+    - name: code_prompt
+    - name: code_response
+    description: Scan Synchronous RequestThis endpoint allows you to make a synchronous scan request for detecting malicious content in the provided input
+    name: airsapi-syncscanrequest
+    outputs:
+    - contextPath: Airsapi.SyncScanRequest.error.message
+      description: ''
+      type: String
+    - contextPath: Airsapi.SyncScanRequest.error.retry_after.interval
+      description: ''
+      type: Number
+    - contextPath: Airsapi.SyncScanRequest.error.retry_after.unit
+      description: ''
+      type: String
+    - contextPath: Airsapi.SyncScanRequest.profile_name
+      description: profile_name
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.profile_id
+      description: profile_id
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.report_id
+      description: report_id
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.action
+      description: action
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.tr_id
+      description: tr_id
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.scan_id
+      description: scan_id
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.category
+      description: category
+      type: string
+    - contextPath: Airsapi.SyncScanRequest.prompt_detected
+      description: prompt_detected
+    - contextPath: Airsapi.SyncScanRequest.prompt_detected.db_security
+      description: db_security
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.prompt_detected.dlp
+      description: dlp
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.prompt_detected.tocix_content
+      description: toxic_content
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.prompt_detected.url_cats
+      description: url_cats
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.response_detected.dlp
+      description: response_Detected
+    - contextPath: Airsapi.SyncScanRequest.response_detected.dlp
+      description: dlp
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.response_detected.injection
+      description: injection
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.response_detected.toxic_content
+      description: toxic_content
+      type: boolean
+    - contextPath: Airsapi.SyncScanRequest.response_detected.url_cats
+      description: url_cats
+      type: boolean
+  - arguments:
+    - name: req_id
+    - name: tr_id
+    - name: profile_name
+    - name: profile_id
+    - defaultValue: XSOAR-Integration
+      name: app_name
+    - defaultValue: XSOAR
+      name: app_user
+    - name: ai_model
+    - name: prompt
+    - name: response
+    - name: code_prompt
+    - name: code_response
+    description: Scan Async RequestThis endpoint allows you to submit a scan request asynchronously.
+    name: airsapi-asyncscanrequest
+    outputs:
+    - contextPath: Airsapi.AsyncScanRequest.received
+      description: recieved
+      type: Date
+    - contextPath: Airsapi.AsyncScanRequest.report_id
+      description: report_id
+      type: String
+    - contextPath: Airsapi.AsyncScanRequest.scan_id
+      description: scan_id
+      type: String
+  - arguments:
+    - name: scan_ids
+      required: true
+    description: Scan ResultsThis endpoint retrieves the results of a scan based on the provided scan ID.
+    name: airsapi-scanresultsbyscanid
+    outputs:
+    - contextPath: Airsapi.Scanresultsbyscanid.req_id
+      description: req_id
+      type: Number
+    - contextPath: Airsapi.Scanresultsbyscanid.result.action
+      description: action
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.result.category
+      description: category
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.result.completed_at
+      description: completed_at
+      type: Date
+    - contextPath: Airsapi.Scanresultsbyscanid.result.profile_id
+      description: profile_id
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.result.profile_name
+      description: profile_name
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.result.prompt_detected.dlp
+      description: dlp
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.prompt_detected.injection
+      description: injection
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.prompt_detected.malicious_code
+      description: malicous_code
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.prompt_detected.toxic_content
+      description: toxic_content
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.prompt_detected.url_cats
+      description: url_cats
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.report_id
+      description: report_id
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.result.response_detected.db_security
+      description: db_security
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.response_detected.dlp
+      description: dlp
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.response_detected.malicious_code
+      description: malicious_code
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.response_detected.toxic_content
+      description: toxic_content
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.response_detected.url_cats
+      description: url_cats
+      type: Boolean
+    - contextPath: Airsapi.Scanresultsbyscanid.result.scan_id
+      description: scan_id
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.result.tr_id
+      description: tr_id
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.scan_id
+      description: scan_id
+      type: String
+    - contextPath: Airsapi.Scanresultsbyscanid.status
+      description: status
+      type: String
+  - arguments:
+    - name: report_ids
+      required: true
+    description: Get Scan ReportsThis endpoint retrieves scan reports based on the provided report IDs.
+    name: airsapi-scanreportsbyreportid
+    outputs:
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.action
+      description: action
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.data_type
+      description: data_type
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.detection_service
+      description: detection_service
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dlp_report.data_pattern_rule1_verdict
+      description: data_pattern_rule1_verdict
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dlp_report.data_pattern_rule2_verdict
+      description: data_pattern_rule2_verdict
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dlp_report.dlp_profile_id
+      description: dlp_profile_id
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dlp_report.dlp_profile_name
+      description: dlp_profile_name
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dlp_report.dlp_report_id
+      description: dlp_report_id
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.verdict
+      description: verdict
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.mc_report.code_info
+      description: code_info
+      type: Unknown
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.mc_report.verdict
+      description: verdict
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail
+      description: result_detail
+      type: Unknown
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.tc_report.confidence
+      description: confidence
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.tc_report.verdict
+      description: verdict
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.urlf_report.action
+      description: action
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.urlf_report.categories
+      description: categories
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.urlf_report.risk_level
+      description: risk_level
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.urlf_report.url
+      description: url
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dbs_report.action
+      description: action
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dbs_report.sub_type
+      description: sub_type
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.dbs_report.verdict
+      description: verdict
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.mc_report.code_info.code_sha256
+      description: code_sha256
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.detection_results.result_detail.mc_report.code_info.file_type
+      description: file_type
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.report_id
+      description: report_id
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.req_id
+      description: req_id
+      type: Number
+    - contextPath: Airsapi.Scanreportsbyreportid.scan_id
+      description: scan_id
+      type: String
+    - contextPath: Airsapi.Scanreportsbyreportid.transaction_id
+      description: transaction_id
+      type: String
+  - arguments:
+    - description: Requested URL
+      isArray: true
+      name: url
+      required: true
+    description: Gets a URL category from URL filtering.
+    name: url
+  dockerimage: demisto/python3:3.12.8.1983910
+  runonce: false
+  script: ''
+  subtype: python3
+  type: python
