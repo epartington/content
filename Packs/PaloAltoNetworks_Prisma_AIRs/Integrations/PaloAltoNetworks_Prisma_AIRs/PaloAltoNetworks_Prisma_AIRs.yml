@@ -5095,6 +5095,96 @@ script:
     - contextPath: PrismaAIRs.RedTeamPromptSetUpload.file_name
       description: Name of the uploaded CSV file.
       type: String
+  - name: prisma-airs-redteam-prompt-sets-reference
+    description: Resolve a prompt set reference (the data-plane consumption view of a prompt set).
+    arguments:
+    - name: uuid
+      required: true
+      description: UUID of the prompt set.
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.uuid
+      description: UUID of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.name
+      description: Name of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.status
+      description: Status of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.active
+      description: Whether the prompt set is active.
+      type: Boolean
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.version
+      description: Version of the prompt set.
+      type: Unknown
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.tsg_id
+      description: Tenant Service Group ID that owns the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.created_at
+      description: Creation timestamp of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetReference.updated_at
+      description: Last-updated timestamp of the prompt set.
+      type: String
+  - name: prisma-airs-redteam-prompt-sets-version-info
+    description: Get version information for a prompt set, including prompt counts.
+    arguments:
+    - name: uuid
+      required: true
+      description: UUID of the prompt set.
+    - name: version
+      required: false
+      description: A specific version ID to query. Defaults to the latest version.
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.uuid
+      description: UUID of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.status
+      description: Status of the prompt set version.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.is_latest
+      description: Whether this is the latest version.
+      type: Boolean
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.version
+      description: The version identifier.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.snapshot_created_at
+      description: Timestamp the version snapshot was created.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.stats.total_prompts
+      description: Total number of prompts in the version.
+      type: Number
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.stats.active_prompts
+      description: Number of active prompts in the version.
+      type: Number
+    - contextPath: PrismaAIRs.RedTeamPromptSetVersionInfo.stats.inactive_prompts
+      description: Number of inactive prompts in the version.
+      type: Number
+  - name: prisma-airs-redteam-prompt-sets-active-list
+    description: List active prompt sets (the data-plane consumption view).
+    arguments: []
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.uuid
+      description: UUID of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.name
+      description: Name of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.status
+      description: Status of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.active
+      description: Whether the prompt set is active.
+      type: Boolean
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.version
+      description: Version of the prompt set.
+      type: Unknown
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.created_at
+      description: Creation timestamp of the prompt set.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPromptSetActive.updated_at
+      description: Last-updated timestamp of the prompt set.
+      type: String
   - name: prisma-airs-redteam-properties-list
     description: List custom-attack property names. Property names (for example, category, severity) form the metadata vocabulary used to tag and filter custom attack prompts. Read-only.
     arguments: []

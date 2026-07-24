@@ -7088,6 +7088,188 @@ def redteam_prompt_sets_upload_command(client: Client, args: dict[str, Any]) -> 
     )
 
 
+def _parse_prompt_set_reference(item: Any) -> dict[str, Any]:
+    """Normalize a prompt-set reference object into a flat context dict.
+
+    Args:
+        item: A single reference object from the API (CustomPromptSetReferenceSchema).
+
+    Returns:
+        dict: Normalized reference record.
+    """
+    data = item if isinstance(item, dict) else {}
+    return {
+        "uuid": data.get("uuid"),
+        "name": data.get("name"),
+        "status": data.get("status"),
+        "active": data.get("active"),
+        "version": data.get("version"),
+        "tsg_id": data.get("tsg_id"),
+        "created_at": data.get("created_at"),
+        "updated_at": data.get("updated_at"),
+    }
+
+
+def redteam_prompt_sets_reference_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Resolve a prompt set reference (data-plane consumption view).
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+              - uuid (required): UUID of the prompt set.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    uuid = args.get("uuid")
+    if not uuid:
+        raise ValueError("uuid is required")
+
+    # Call Red Team Custom Attack prompt-set reference endpoint (mgmt-plane).
+    # SDK: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/red-team/custom-attacks-client.ts (getPromptSetReference)
+    # Schema: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/models/red-team.ts (CustomPromptSetReferenceSchema)
+    response = client.http_request(
+        method="GET",
+        url_suffix=f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/custom-prompt-set/{uuid}/reference",
+        use_redteam_mgmt=True,
+    )
+
+    reference = _parse_prompt_set_reference(response)
+
+    readable_output = tableToMarkdown(
+        "Red Team Prompt Set Reference",
+        [reference],
+        headers=["uuid", "name", "status", "active", "version", "tsg_id", "created_at", "updated_at"],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamPromptSetReference",
+        outputs_key_field="uuid",
+        outputs=reference,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
+def redteam_prompt_sets_version_info_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Get version information for a prompt set.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+              - uuid (required): UUID of the prompt set.
+              - version (optional): A specific version ID to query.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    uuid = args.get("uuid")
+    if not uuid:
+        raise ValueError("uuid is required")
+
+    version = args.get("version")
+    params = {"version": version} if version else None
+
+    # Call Red Team Custom Attack prompt-set version-info endpoint (mgmt-plane).
+    # SDK: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/red-team/custom-attacks-client.ts (getPromptSetVersionInfo)
+    # Schema: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/models/red-team.ts (CustomPromptSetVersionInfoSchema)
+    response = client.http_request(
+        method="GET",
+        url_suffix=f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/custom-prompt-set/{uuid}/version-info",
+        params=params,
+        use_redteam_mgmt=True,
+    )
+
+    data = response if isinstance(response, dict) else {}
+    version_info = {
+        "uuid": data.get("uuid") or uuid,
+        "status": data.get("status"),
+        "is_latest": data.get("is_latest"),
+        "version": data.get("version"),
+        "snapshot_created_at": data.get("snapshot_created_at"),
+        "stats": data.get("stats"),
+    }
+
+    # Flatten stats for the human-readable table while keeping the nested object in context.
+    stats = version_info.get("stats") or {}
+    readable_row = {
+        "uuid": version_info["uuid"],
+        "status": version_info["status"],
+        "is_latest": version_info["is_latest"],
+        "version": version_info["version"],
+        "total_prompts": stats.get("total_prompts") if isinstance(stats, dict) else None,
+        "active_prompts": stats.get("active_prompts") if isinstance(stats, dict) else None,
+        "inactive_prompts": stats.get("inactive_prompts") if isinstance(stats, dict) else None,
+        "snapshot_created_at": version_info["snapshot_created_at"],
+    }
+
+    readable_output = tableToMarkdown(
+        "Red Team Prompt Set Version Info",
+        [readable_row],
+        headers=[
+            "uuid",
+            "status",
+            "is_latest",
+            "version",
+            "total_prompts",
+            "active_prompts",
+            "inactive_prompts",
+            "snapshot_created_at",
+        ],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamPromptSetVersionInfo",
+        outputs_key_field="uuid",
+        outputs=version_info,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
+def redteam_prompt_sets_active_list_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """List active prompt sets (data-plane consumption view).
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    # Call Red Team Custom Attack active prompt-sets endpoint (mgmt-plane).
+    # SDK: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/red-team/custom-attacks-client.ts (listActivePromptSets)
+    # Schema: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/models/red-team.ts (CustomPromptSetListActiveSchema)
+    response = client.http_request(
+        method="GET",
+        url_suffix=f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/active-custom-prompt-sets",
+        use_redteam_mgmt=True,
+    )
+
+    raw_list = response.get("data") or [] if isinstance(response, dict) else []
+    prompt_sets = [_parse_prompt_set_reference(item) for item in raw_list]
+
+    readable_output = tableToMarkdown(
+        f"Red Team Active Prompt Sets ({len(prompt_sets)})",
+        prompt_sets,
+        headers=["uuid", "name", "status", "active", "version", "created_at", "updated_at"],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamPromptSetActive",
+        outputs_key_field="uuid",
+        outputs=prompt_sets,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
 def redteam_properties_list_command(client: Client, args: dict[str, Any]) -> CommandResults:
     """List custom-attack property names.
 
@@ -9644,6 +9826,15 @@ def main() -> None:
         # Red Team Prompt Sets Upload Command (1 command)
         elif command == "prisma-airs-redteam-prompt-sets-upload":
             return_results(redteam_prompt_sets_upload_command(client, args))
+
+        elif command == "prisma-airs-redteam-prompt-sets-reference":
+            return_results(redteam_prompt_sets_reference_command(client, args))
+
+        elif command == "prisma-airs-redteam-prompt-sets-version-info":
+            return_results(redteam_prompt_sets_version_info_command(client, args))
+
+        elif command == "prisma-airs-redteam-prompt-sets-active-list":
+            return_results(redteam_prompt_sets_active_list_command(client, args))
 
         elif command == "prisma-airs-redteam-properties-list":
             return_results(redteam_properties_list_command(client, args))

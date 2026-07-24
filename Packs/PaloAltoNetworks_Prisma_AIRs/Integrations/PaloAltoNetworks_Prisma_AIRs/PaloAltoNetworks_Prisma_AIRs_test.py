@@ -76,6 +76,9 @@ from PaloAltoNetworks_Prisma_AIRs import (
     redteam_prompt_sets_archive_command,
     redteam_prompt_sets_download_command,
     redteam_prompt_sets_upload_command,
+    redteam_prompt_sets_reference_command,
+    redteam_prompt_sets_version_info_command,
+    redteam_prompt_sets_active_list_command,
     redteam_prompts_create_command,
     redteam_prompts_list_command,
     redteam_prompts_get_command,
@@ -1710,6 +1713,133 @@ class TestCommands:
         """
         with pytest.raises(ValueError, match="entryID is required"):
             redteam_prompt_sets_upload_command(mock_client, {"uuid": "ps-1"})
+
+    @patch.object(Client, "http_request")
+    def test_redteam_prompt_sets_reference_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """prompt-sets-reference resolves a single reference object on the mgmt plane.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {
+            "uuid": "ps-1",
+            "name": "jailbreaks",
+            "status": "READY",
+            "active": True,
+            "tsg_id": "tsg-1",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-02T00:00:00Z",
+        }
+
+        result = redteam_prompt_sets_reference_command(mock_client, {"uuid": "ps-1"})
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPromptSetReference"
+        assert result.outputs_key_field == "uuid"
+        assert result.outputs["uuid"] == "ps-1"
+        assert result.outputs["name"] == "jailbreaks"
+        assert result.outputs["active"] is True
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/custom-prompt-set/ps-1/reference"
+        assert kwargs["use_redteam_mgmt"] is True
+
+    def test_redteam_prompt_sets_reference_requires_uuid(self, mock_client: Client) -> None:
+        """prompt-sets-reference raises when uuid is missing.
+
+        Args:
+            mock_client: Mock client fixture.
+        """
+        with pytest.raises(ValueError, match="uuid is required"):
+            redteam_prompt_sets_reference_command(mock_client, {})
+
+    @patch.object(Client, "http_request")
+    def test_redteam_prompt_sets_version_info_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """prompt-sets-version-info returns version info and flattens stats for the table.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {
+            "uuid": "ps-1",
+            "status": "READY",
+            "is_latest": True,
+            "version": "gen-123",
+            "stats": {"total_prompts": 10, "active_prompts": 8, "inactive_prompts": 2},
+            "snapshot_created_at": "2026-01-03T00:00:00Z",
+        }
+
+        result = redteam_prompt_sets_version_info_command(mock_client, {"uuid": "ps-1"})
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPromptSetVersionInfo"
+        assert result.outputs["uuid"] == "ps-1"
+        assert result.outputs["is_latest"] is True
+        assert result.outputs["stats"]["total_prompts"] == 10
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/custom-prompt-set/ps-1/version-info"
+        assert kwargs["params"] is None
+        assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_prompt_sets_version_info_with_version(self, mock_http: Mock, mock_client: Client) -> None:
+        """prompt-sets-version-info passes the version query param when provided.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"uuid": "ps-1", "status": "READY", "is_latest": False, "version": "gen-9"}
+
+        redteam_prompt_sets_version_info_command(mock_client, {"uuid": "ps-1", "version": "gen-9"})
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["params"] == {"version": "gen-9"}
+
+    @patch.object(Client, "http_request")
+    def test_redteam_prompt_sets_active_list_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """prompt-sets-active-list normalizes the data array into reference records.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {
+            "data": [
+                {"uuid": "ps-1", "name": "jailbreaks", "status": "READY", "active": True},
+                {"uuid": "ps-2", "name": "pii", "status": "READY", "active": True},
+            ]
+        }
+
+        result = redteam_prompt_sets_active_list_command(mock_client, {})
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPromptSetActive"
+        assert result.outputs_key_field == "uuid"
+        assert len(result.outputs) == 2
+        assert result.outputs[0]["uuid"] == "ps-1"
+        assert result.outputs[1]["name"] == "pii"
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/active-custom-prompt-sets"
+        assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_prompt_sets_active_list_empty(self, mock_http: Mock, mock_client: Client) -> None:
+        """prompt-sets-active-list handles a missing/empty data array gracefully.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {}
+
+        result = redteam_prompt_sets_active_list_command(mock_client, {})
+
+        assert result.outputs == []
 
     @patch.object(Client, "http_request")
     def test_redteam_prompts_create_command(self, mock_http: Mock, mock_client: Client) -> None:

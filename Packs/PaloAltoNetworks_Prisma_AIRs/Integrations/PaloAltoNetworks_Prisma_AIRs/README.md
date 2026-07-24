@@ -5825,3 +5825,126 @@ Update the sentiment (up/down-vote) for a Red Team scan report.
 >|Job Id|Up Vote|Down Vote|
 >|---|---|---|
 >| 87dcf504-3e57-486a-b6a0-69a4ff896130 | true | false |
+
+### prisma-airs-redteam-prompt-sets-reference
+
+***
+Get the reference metadata for a single custom prompt set by UUID.
+
+#### Base Command
+
+`prisma-airs-redteam-prompt-sets-reference`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| uuid | The UUID of the custom prompt set. | Required |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamPromptSetReference.uuid | String | The UUID of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetReference.name | String | The name of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetReference.status | String | The validation status of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetReference.active | Boolean | Whether the prompt set is active. |
+| PrismaAIRs.RedTeamPromptSetReference.version | String | The current version ID of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetReference.tsg_id | String | The tenant service group ID owning the prompt set. |
+| PrismaAIRs.RedTeamPromptSetReference.created_at | Date | When the prompt set was created. |
+| PrismaAIRs.RedTeamPromptSetReference.updated_at | Date | When the prompt set was last updated. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-prompt-sets-reference uuid="adf6e1bd-61f1-4e57-9650-b40f26b981cb"
+```
+
+#### Human Readable Output
+
+>### Red Team Prompt Set Reference
+>
+>|Uuid|Name|Status|Active|Version|Tsg Id|Created At|Updated At|
+>|---|---|---|---|---|---|---|---|
+>| adf6e1bd-61f1-4e57-9650-b40f26b981cb | prompt-database-gt8 | VALIDATED | true | 1778265136079904 | 1082076864 | 2026-05-08T18:31:07.121412Z | 2026-05-08T18:32:06.656700Z |
+
+### prisma-airs-redteam-prompt-sets-version-info
+
+***
+Get version information (status, latest flag, and prompt counts) for a custom prompt set.
+
+> **Note:** As of this release the upstream `.../version-info` endpoint returns an HTTP 500 (`internal_error`) for every prompt set queried, so this command currently surfaces that server error. The command is implemented to match the working reference/active-list contract and will function once the upstream endpoint is fixed.
+
+#### Base Command
+
+`prisma-airs-redteam-prompt-sets-version-info`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| uuid | The UUID of the custom prompt set. | Required |
+| version | A specific version ID to query. If omitted, the latest version is used. | Optional |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.uuid | String | The UUID of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.status | String | The validation status of the version. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.is_latest | Boolean | Whether this is the latest version. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.version | String | The version ID. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.snapshot_created_at | Date | When the version snapshot was created. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.stats.total_prompts | Number | Total number of prompts in the version. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.stats.active_prompts | Number | Number of active prompts in the version. |
+| PrismaAIRs.RedTeamPromptSetVersionInfo.stats.inactive_prompts | Number | Number of inactive prompts in the version. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-prompt-sets-version-info uuid="adf6e1bd-61f1-4e57-9650-b40f26b981cb"
+```
+
+### prisma-airs-redteam-prompt-sets-active-list
+
+***
+List all active custom prompt sets available to the tenant.
+
+#### Base Command
+
+`prisma-airs-redteam-prompt-sets-active-list`
+
+#### Input
+
+There are no input arguments for this command.
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamPromptSetActive.uuid | String | The UUID of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetActive.name | String | The name of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetActive.status | String | The validation status of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetActive.active | Boolean | Whether the prompt set is active. |
+| PrismaAIRs.RedTeamPromptSetActive.version | String | The current version ID of the prompt set. |
+| PrismaAIRs.RedTeamPromptSetActive.created_at | Date | When the prompt set was created. |
+| PrismaAIRs.RedTeamPromptSetActive.updated_at | Date | When the prompt set was last updated. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-prompt-sets-active-list
+```
+
+#### Human Readable Output
+
+>### Red Team Active Prompt Sets (6)
+>
+>|Uuid|Name|Status|Active|Version|Created At|Updated At|
+>|---|---|---|---|---|---|---|
+>| adf6e1bd-61f1-4e57-9650-b40f26b981cb | prompt-database-gt8 | VALIDATED | true | 1778265136079904 | 2026-05-08T18:31:07.121412Z | 2026-05-08T18:32:06.656700Z |
+>| 73eea776-ecbf-4a5d-9098-a37744441fca | Customer1-AttackSet-Dec12 | VALIDATED | true | 1765676087646509 | 2025-12-14T01:04:00.293326Z | 2025-12-14T01:34:46.863454Z |
+>| f9f8cd22-22b9-4754-8656-15b2e51b6952 | HarmBench | VALIDATED | true | 1765223808680718 | 2025-12-08T19:56:28.277764Z | 2025-12-08T19:56:41.447806Z |
+>| 06d2a36e-49ac-4712-b7ca-e87e4ba9d9fe | Customer1-AttackSet-HateAndFairness | VALIDATED | true | 1765223583469443 | 2025-12-08T19:51:27.040750Z | 2025-12-08T19:53:02.306773Z |
+>| a9731c3a-f989-40ff-8a7b-efadaf4a490b | Customer1-AttackSet-EnterpriseReputation | VALIDATED | true | 1765214683038772 | 2025-12-08T17:24:21.529411Z | 2025-12-08T17:24:42.030120Z |
+>| 84364729-1dc6-498a-a7d0-d26c4d5cf697 | Customer1-AttackSet-Sexual | VALIDATED | true | 1765214555828681 | 2025-12-08T17:21:31.955832Z | 2025-12-08T17:22:28.407352Z |
