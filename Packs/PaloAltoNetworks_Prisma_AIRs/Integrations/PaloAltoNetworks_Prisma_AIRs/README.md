@@ -5594,3 +5594,157 @@ Upload CSV file with prompts to a Red Team prompt set. CSV must have 'prompt' an
 | PrismaAIRs.RedTeamPromptSetUpload.status | Number | HTTP status code of the upload operation. |
 | PrismaAIRs.RedTeamPromptSetUpload.prompt_set_uuid | String | UUID of the prompt set that was uploaded to. |
 | PrismaAIRs.RedTeamPromptSetUpload.file_name | String | Name of the uploaded CSV file. |
+
+### prisma-airs-redteam-properties-list
+
+***
+List custom-attack property names. Property names (for example, category, severity) form the metadata vocabulary used to tag and filter custom attack prompts. Read-only.
+
+#### Base Command
+
+`prisma-airs-redteam-properties-list`
+
+#### Input
+
+There are no input arguments for this command.
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamProperty | Unknown | List of custom-attack property names. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-properties-list
+```
+
+#### Human Readable Output
+
+>### Red Team Custom-Attack Property Names
+>
+>|Property Name|
+>|---|
+>| Complexity |
+>| Severity |
+>| Semantic Category |
+>| customer |
+>| type |
+
+### prisma-airs-redteam-properties-values
+
+***
+Get the allowed values for one or more custom-attack property names. Provide either property_name (single) or property_names (comma-separated list for a batch lookup). Read-only.
+
+> **Note:** On the current API version the batch endpoint (property_names) honors only the last name supplied; to reliably retrieve values for several properties, call the command once per name using property_name.
+
+#### Base Command
+
+`prisma-airs-redteam-properties-values`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| property_name | A single property name to look up values for. | Optional |
+| property_names | Comma-separated list of property names to look up values for \(batch lookup\). | Optional |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamPropertyValue.name | String | The property name. |
+| PrismaAIRs.RedTeamPropertyValue.values | Unknown | The allowed values for the property name. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-properties-values property_name="Severity"
+```
+
+#### Human Readable Output
+
+>### Red Team Custom-Attack Property Values
+>
+>|Property Name|Value|
+>|---|---|
+>| Severity | Low |
+>| Severity | High |
+>| Severity | Medium |
+
+### prisma-airs-redteam-properties-create
+
+***
+Create a new custom-attack property name.
+
+#### Base Command
+
+`prisma-airs-redteam-properties-create`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| name | The property name to create \(for example, severity\). | Required |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamPropertyCreate.name | String | The property name that was created. |
+| PrismaAIRs.RedTeamPropertyCreate.message | String | Response message from the create operation. |
+| PrismaAIRs.RedTeamPropertyCreate.status | Number | HTTP status code of the create operation. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-properties-create name="severity"
+```
+
+#### Human Readable Output
+
+>### Red Team Custom-Attack Property Name Created: severity
+>
+>|Name|
+>|---|
+>| severity |
+
+### prisma-airs-redteam-properties-add-value
+
+***
+Add an allowed value to an existing custom-attack property name.
+
+#### Base Command
+
+`prisma-airs-redteam-properties-add-value`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| property_name | The property name to add a value to \(for example, severity\). | Required |
+| property_value | The value to add \(for example, critical\). | Required |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamPropertyValueCreate.property_name | String | The property name the value was added to. |
+| PrismaAIRs.RedTeamPropertyValueCreate.property_value | String | The value that was added. |
+| PrismaAIRs.RedTeamPropertyValueCreate.message | String | Response message from the add-value operation. |
+| PrismaAIRs.RedTeamPropertyValueCreate.status | Number | HTTP status code of the add-value operation. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-properties-add-value property_name="severity" property_value="critical"
+```
+
+#### Human Readable Output
+
+>### Red Team Custom-Attack Property Value Added: severity
+>
+>|Property Name|Property Value|Message|Status|
+>|---|---|---|---|
+>| severity | critical | Property value 'critical' created successfully | 200 |

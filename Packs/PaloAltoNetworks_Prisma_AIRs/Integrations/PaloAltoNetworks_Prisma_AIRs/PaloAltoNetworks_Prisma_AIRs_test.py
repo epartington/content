@@ -114,6 +114,10 @@ from PaloAltoNetworks_Prisma_AIRs import (
     model_security_rule_instances_list_command,
     redteam_targets_profile_command,
     redteam_targets_update_profile_command,
+    redteam_properties_add_value_command,
+    redteam_properties_create_command,
+    redteam_properties_list_command,
+    redteam_properties_values_command,
     redteam_targets_metadata_command,
     redteam_targets_templates_command,
     redteam_targets_validate_auth_command,
@@ -1020,6 +1024,126 @@ class TestCommands:
         _, kwargs = mock_http.call_args
         assert kwargs["method"] == "GET"
         assert kwargs["url_suffix"] == "/v1/template/target-templates"
+        assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_properties_list_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam properties list command.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"data": ["category", "severity"]}
+
+        args: dict[str, str] = {}
+        result = redteam_properties_list_command(mock_client, args)
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamProperty"
+        assert result.outputs == ["category", "severity"]
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/property-names"
+        assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_properties_values_single_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam properties values command with a single property_name.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"name": "severity", "values": ["low", "medium", "high"]}
+
+        args = {"property_name": "severity"}
+        result = redteam_properties_values_command(mock_client, args)
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPropertyValue"
+        assert result.outputs == [{"name": "severity", "values": ["low", "medium", "high"]}]
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/property-values/severity"
+        assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_properties_values_multiple_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam properties values command with multiple property_names (batch lookup).
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"data": {"category": ["jailbreak", "pii"], "severity": ["low", "high"]}}
+
+        args = {"property_names": "category,severity"}
+        result = redteam_properties_values_command(mock_client, args)
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPropertyValue"
+        assert {"name": "category", "values": ["jailbreak", "pii"]} in result.outputs
+        assert {"name": "severity", "values": ["low", "high"]} in result.outputs
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/property-values"
+        assert kwargs["params"]["property_names"] == ["category", "severity"]
+        assert kwargs["use_redteam_mgmt"] is True
+
+    def test_redteam_properties_values_requires_arg(self, mock_client: Client) -> None:
+        """Test redteam properties values command raises when no argument is provided.
+
+        Args:
+            mock_client: Mock client fixture.
+        """
+        with pytest.raises(ValueError, match="property_name"):
+            redteam_properties_values_command(mock_client, {})
+
+    @patch.object(Client, "http_request")
+    def test_redteam_properties_create_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam properties create command.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"message": "ok", "status": 200}
+
+        args = {"name": "severity"}
+        result = redteam_properties_create_command(mock_client, args)
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPropertyCreate"
+        assert result.outputs["name"] == "severity"
+        assert result.outputs["status"] == 200
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "POST"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/property-names"
+        assert kwargs["json_data"] == {"name": "severity"}
+        assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_properties_add_value_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam properties add-value command.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"message": "ok", "status": 200}
+
+        args = {"property_name": "severity", "property_value": "critical"}
+        result = redteam_properties_add_value_command(mock_client, args)
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamPropertyValueCreate"
+        assert result.outputs["property_name"] == "severity"
+        assert result.outputs["property_value"] == "critical"
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "POST"
+        assert kwargs["url_suffix"] == "/v1/custom-attack/property-values"
+        assert kwargs["json_data"] == {"property_name": "severity", "property_value": "critical"}
         assert kwargs["use_redteam_mgmt"] is True
 
     @patch.object(Client, "http_request")

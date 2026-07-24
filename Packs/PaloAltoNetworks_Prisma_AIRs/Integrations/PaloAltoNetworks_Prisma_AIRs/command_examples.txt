@@ -60,3 +60,5 @@
 !prisma-airs-redteam-network-channels-stats
 !prisma-airs-redteam-languages-list
 !prisma-airs-redteam-targets-templates
+!prisma-airs-redteam-properties-list
+!prisma-airs-redteam-properties-values property_name="Severity"

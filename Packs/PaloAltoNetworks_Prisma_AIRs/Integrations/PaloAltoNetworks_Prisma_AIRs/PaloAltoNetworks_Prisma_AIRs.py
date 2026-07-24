@@ -7085,6 +7085,217 @@ def redteam_prompt_sets_upload_command(client: Client, args: dict[str, Any]) -> 
     )
 
 
+def redteam_properties_list_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """List custom-attack property names.
+
+    Property names (e.g., category, severity) form the metadata vocabulary used to tag and
+    filter custom attack prompts. Read-only.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    # Call Red Team Custom Attack property-names endpoint
+    # Reference: ./knowledge/versions/current/prisma-airs-sdk/src/red-team/custom-attacks-client.ts (getPropertyNames)
+    # Endpoint: GET /v1/custom-attack/property-names
+    # Response: PropertyNamesListResponse - { data: string[] }
+    url_suffix = f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/property-names"
+    response = client.http_request(method="GET", url_suffix=url_suffix, use_redteam_mgmt=True)
+
+    names = response.get("data") or [] if isinstance(response, dict) else []
+
+    readable_output = tableToMarkdown(
+        "Red Team Custom-Attack Property Names",
+        [{"Property Name": name} for name in names],
+        headers=["Property Name"],
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamProperty",
+        outputs=names,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
+def redteam_properties_values_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Get allowed values for one or more custom-attack property names.
+
+    Provide either property_name (single lookup) or property_names (comma-separated list for
+    a batch lookup). Read-only. Both response shapes are normalized to a flat list of
+    {name, values} entries.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    property_name = args.get("property_name")
+    property_names = argToList(args.get("property_names"))
+
+    if not property_name and not property_names:
+        raise ValueError("Provide either property_name (single) or property_names (comma-separated).")
+
+    normalized: list[dict[str, Any]] = []
+
+    if property_names:
+        # Batch lookup across multiple property names.
+        # Reference: ./knowledge/versions/current/prisma-airs-sdk/src/red-team/custom-attacks-client.ts
+        #   (getPropertyValuesMultiple)
+        # Endpoint: GET /v1/custom-attack/property-values?property_names=a&property_names=b
+        # Response: PropertyValuesMultipleResponse - { data: { name: string[] } }
+        url_suffix = f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/property-values"
+        response = client.http_request(
+            method="GET",
+            url_suffix=url_suffix,
+            params={"property_names": property_names},
+            use_redteam_mgmt=True,
+        )
+        values_map = response.get("data") or {} if isinstance(response, dict) else {}
+        for name, values in values_map.items():
+            normalized.append({"name": name, "values": values or []})
+    else:
+        # Single-name lookup.
+        # Reference: ./knowledge/versions/current/prisma-airs-sdk/src/red-team/custom-attacks-client.ts
+        #   (getPropertyValues)
+        # Endpoint: GET /v1/custom-attack/property-values/{name}
+        # Response: PropertyValuesResponse - { name, values: string[] }
+        url_suffix = f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/property-values/{property_name}"
+        response = client.http_request(method="GET", url_suffix=url_suffix, use_redteam_mgmt=True)
+        result = response if isinstance(response, dict) else {}
+        normalized.append({"name": result.get("name", property_name), "values": result.get("values") or []})
+
+    # Build a readable table with one row per (name, value) pair.
+    readable_rows = []
+    for entry in normalized:
+        for value in entry["values"]:
+            readable_rows.append({"Property Name": entry["name"], "Value": value})
+        if not entry["values"]:
+            readable_rows.append({"Property Name": entry["name"], "Value": None})
+
+    readable_output = tableToMarkdown(
+        "Red Team Custom-Attack Property Values",
+        readable_rows,
+        headers=["Property Name", "Value"],
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamPropertyValue",
+        outputs_key_field="name",
+        outputs=normalized,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
+def redteam_properties_create_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Create a new custom-attack property name.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    name = args.get("name")
+    if not name:
+        raise ValueError("name is required")
+
+    # Call Red Team Custom Attack property-names endpoint
+    # Reference: ./knowledge/versions/current/prisma-airs-sdk/src/red-team/custom-attacks-client.ts (createPropertyName)
+    # Endpoint: POST /v1/custom-attack/property-names
+    # Body: PropertyNameCreateRequest - { name }
+    # Response: BaseResponse (optional) - { message, status }
+    url_suffix = f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/property-names"
+    response = client.http_request(method="POST", url_suffix=url_suffix, json_data={"name": name}, use_redteam_mgmt=True)
+
+    result = response if isinstance(response, dict) else {}
+    create_info = {
+        "name": name,
+        "message": result.get("message"),
+        "status": result.get("status"),
+    }
+
+    readable_output = tableToMarkdown(
+        f"Red Team Custom-Attack Property Name Created: {name}",
+        [create_info],
+        headers=["name", "message", "status"],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamPropertyCreate",
+        outputs_key_field="name",
+        outputs=create_info,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
+def redteam_properties_add_value_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Add an allowed value to an existing custom-attack property name.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    property_name = args.get("property_name")
+    property_value = args.get("property_value")
+    if not property_name:
+        raise ValueError("property_name is required")
+    if not property_value:
+        raise ValueError("property_value is required")
+
+    # Call Red Team Custom Attack property-values endpoint
+    # Reference: ./knowledge/versions/current/prisma-airs-sdk/src/red-team/custom-attacks-client.ts (createPropertyValue)
+    # Endpoint: POST /v1/custom-attack/property-values
+    # Body: PropertyValueCreateRequest - { property_name, property_value }
+    # Response: BaseResponse - { message, status }
+    url_suffix = f"{RED_TEAM_CUSTOM_ATTACK_ENDPOINT}/property-values"
+    response = client.http_request(
+        method="POST",
+        url_suffix=url_suffix,
+        json_data={"property_name": property_name, "property_value": property_value},
+        use_redteam_mgmt=True,
+    )
+
+    result = response if isinstance(response, dict) else {}
+    add_info = {
+        "property_name": property_name,
+        "property_value": property_value,
+        "message": result.get("message"),
+        "status": result.get("status"),
+    }
+
+    readable_output = tableToMarkdown(
+        f"Red Team Custom-Attack Property Value Added: {property_name}",
+        [add_info],
+        headers=["property_name", "property_value", "message", "status"],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamPropertyValueCreate",
+        outputs_key_field="property_name",
+        outputs=add_info,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
 def runtime_topics_list_command(client: Client, args: dict[str, Any]) -> CommandResults:
     """List custom topics.
 
@@ -9318,6 +9529,18 @@ def main() -> None:
         # Red Team Prompt Sets Upload Command (1 command)
         elif command == "prisma-airs-redteam-prompt-sets-upload":
             return_results(redteam_prompt_sets_upload_command(client, args))
+
+        elif command == "prisma-airs-redteam-properties-list":
+            return_results(redteam_properties_list_command(client, args))
+
+        elif command == "prisma-airs-redteam-properties-values":
+            return_results(redteam_properties_values_command(client, args))
+
+        elif command == "prisma-airs-redteam-properties-create":
+            return_results(redteam_properties_create_command(client, args))
+
+        elif command == "prisma-airs-redteam-properties-add-value":
+            return_results(redteam_properties_add_value_command(client, args))
 
         else:
             raise NotImplementedError(f"Command {command} is not implemented")

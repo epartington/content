@@ -5095,6 +5095,66 @@ script:
     - contextPath: PrismaAIRs.RedTeamPromptSetUpload.file_name
       description: Name of the uploaded CSV file.
       type: String
+  - name: prisma-airs-redteam-properties-list
+    description: List custom-attack property names. Property names (for example, category, severity) form the metadata vocabulary used to tag and filter custom attack prompts. Read-only.
+    arguments: []
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamProperty
+      description: List of custom-attack property names.
+      type: Unknown
+  - name: prisma-airs-redteam-properties-values
+    description: Get the allowed values for one or more custom-attack property names. Provide either property_name (single) or property_names (comma-separated list for a batch lookup). Read-only.
+    arguments:
+    - name: property_name
+      description: A single property name to look up values for.
+    - name: property_names
+      description: Comma-separated list of property names to look up values for (batch lookup).
+      isArray: true
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamPropertyValue.name
+      description: The property name.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPropertyValue.values
+      description: The allowed values for the property name.
+      type: Unknown
+  - name: prisma-airs-redteam-properties-create
+    description: Create a new custom-attack property name.
+    arguments:
+    - name: name
+      required: true
+      description: The property name to create (for example, severity).
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamPropertyCreate.name
+      description: The property name that was created.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPropertyCreate.message
+      description: Response message from the create operation.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPropertyCreate.status
+      description: HTTP status code of the create operation.
+      type: Number
+  - name: prisma-airs-redteam-properties-add-value
+    description: Add an allowed value to an existing custom-attack property name.
+    arguments:
+    - name: property_name
+      required: true
+      description: The property name to add a value to (for example, severity).
+    - name: property_value
+      required: true
+      description: The value to add (for example, critical).
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamPropertyValueCreate.property_name
+      description: The property name the value was added to.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPropertyValueCreate.property_value
+      description: The value that was added.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPropertyValueCreate.message
+      description: Response message from the add-value operation.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamPropertyValueCreate.status
+      description: HTTP status code of the add-value operation.
+      type: Number
   dockerimage: demisto/python3:3.10.14.95956
   runonce: false
   script: '-'
