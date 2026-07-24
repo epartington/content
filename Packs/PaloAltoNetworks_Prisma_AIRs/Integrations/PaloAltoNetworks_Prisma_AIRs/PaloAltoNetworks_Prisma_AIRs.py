@@ -38,6 +38,9 @@ RED_TEAM_LANGUAGES_ENDPOINT = "/v1/languages"
 # Network broker channels live on a distinct data-plane sub-path (/network-broker), used with use_redteam_data=True.
 # Reference: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/constants.ts (RED_TEAM_CHANNELS_PATH + network-broker base URL)
 RED_TEAM_NETWORK_CHANNELS_ENDPOINT = "/network-broker/v1/channels"
+# Sentiment (up/down-vote a scan report) - data-plane.
+# Reference: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/constants.ts (RED_TEAM_SENTIMENT_PATH)
+RED_TEAM_SENTIMENT_ENDPOINT = "/v1/sentiment"
 # DLP API path suffixes (v2 API) - uses separate base URL
 # Reference: ./knowledge/prisma-airs-sdk-main/src/constants.ts
 # CRITICAL: DLP v2 API uses https://api.dlp.paloaltonetworks.com (NOT the SCM base URL)
@@ -7296,6 +7299,118 @@ def redteam_properties_add_value_command(client: Client, args: dict[str, Any]) -
     )
 
 
+def _normalize_sentiment(response: Any, job_id: str) -> dict[str, Any]:
+    """Normalize a sentiment API response into a flat context dict.
+
+    Args:
+        response: Raw API response (expected shape: {job_id, up_vote?, down_vote?}).
+        job_id: The job UUID the sentiment applies to (fallback if absent in response).
+
+    Returns:
+        dict: Normalized sentiment record.
+    """
+    data = response if isinstance(response, dict) else {}
+    return {
+        "job_id": data.get("job_id") or job_id,
+        "up_vote": data.get("up_vote"),
+        "down_vote": data.get("down_vote"),
+    }
+
+
+def redteam_sentiment_get_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Get the sentiment (up/down-vote) recorded for a Red Team scan report.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    job_id = args.get("job_id")
+    if not job_id:
+        raise ValueError("job_id is required")
+
+    # Call Red Team sentiment get endpoint (data-plane).
+    # Reference: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/red-team/client.ts (getSentiment)
+    # SDK schema: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/models/red-team.ts (SentimentResponseSchema)
+    response = client.http_request(method="GET", url_suffix=f"{RED_TEAM_SENTIMENT_ENDPOINT}/{job_id}", use_redteam_data=True)
+
+    sentiment = _normalize_sentiment(response, job_id)
+
+    readable_output = tableToMarkdown(
+        f"Red Team Report Sentiment: {sentiment['job_id']}",
+        [sentiment],
+        headers=["job_id", "up_vote", "down_vote"],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamSentiment",
+        outputs_key_field="job_id",
+        outputs=sentiment,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
+def redteam_sentiment_update_command(client: Client, args: dict[str, Any]) -> CommandResults:
+    """Update the sentiment (up/down-vote) for a Red Team scan report.
+
+    Args:
+        client: Prisma AIRs API client.
+        args: Command arguments from XSOAR.
+
+    Returns:
+        CommandResults: Results to return to XSOAR.
+    """
+    job_id = args.get("job_id")
+    if not job_id:
+        raise ValueError("job_id is required")
+
+    vote = (args.get("vote") or "").lower()
+    if vote not in ("up", "down"):
+        raise ValueError("vote is required and must be one of: up, down.")
+
+    # Map the single 'vote' arg to the API's boolean flags.
+    # SDK body schema: {job_id, up_vote?, down_vote?}
+    # Reference: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/models/red-team.ts (SentimentRequestSchema)
+    request_body: dict[str, Any] = {"job_id": job_id}
+    if vote == "up":
+        request_body["up_vote"] = True
+    else:
+        request_body["down_vote"] = True
+
+    # Call Red Team sentiment update endpoint (data-plane).
+    # Reference: ./knowledge/versions/0-13-2/prisma-airs-sdk-main/src/red-team/client.ts (updateSentiment)
+    response = client.http_request(
+        method="POST", url_suffix=RED_TEAM_SENTIMENT_ENDPOINT, json_data=request_body, use_redteam_data=True
+    )
+
+    sentiment = _normalize_sentiment(response, job_id)
+    # Fall back to the requested vote if the API echoes an empty body.
+    if sentiment["up_vote"] is None and sentiment["down_vote"] is None:
+        sentiment["up_vote"] = vote == "up"
+        sentiment["down_vote"] = vote == "down"
+
+    readable_output = tableToMarkdown(
+        f"Red Team Report Sentiment Updated: {sentiment['job_id']}",
+        [sentiment],
+        headers=["job_id", "up_vote", "down_vote"],
+        headerTransform=lambda h: h.replace("_", " ").title(),
+        removeNull=True,
+    )
+
+    return CommandResults(
+        outputs_prefix=f"{PA_OUTPUT_PREFIX}RedTeamSentiment",
+        outputs_key_field="job_id",
+        outputs=sentiment,
+        readable_output=readable_output,
+        raw_response=response,
+    )
+
+
 def runtime_topics_list_command(client: Client, args: dict[str, Any]) -> CommandResults:
     """List custom topics.
 
@@ -9541,6 +9656,12 @@ def main() -> None:
 
         elif command == "prisma-airs-redteam-properties-add-value":
             return_results(redteam_properties_add_value_command(client, args))
+
+        elif command == "prisma-airs-redteam-sentiment-get":
+            return_results(redteam_sentiment_get_command(client, args))
+
+        elif command == "prisma-airs-redteam-sentiment-update":
+            return_results(redteam_sentiment_update_command(client, args))
 
         else:
             raise NotImplementedError(f"Command {command} is not implemented")

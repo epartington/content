@@ -5155,6 +5155,45 @@ script:
     - contextPath: PrismaAIRs.RedTeamPropertyValueCreate.status
       description: HTTP status code of the add-value operation.
       type: Number
+  - name: prisma-airs-redteam-sentiment-get
+    description: Get the sentiment (up/down-vote) recorded for a Red Team scan report.
+    arguments:
+    - name: job_id
+      required: true
+      description: The job UUID of the scan report to get sentiment for.
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamSentiment.job_id
+      description: The job UUID the sentiment applies to.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamSentiment.up_vote
+      description: Whether the report was up-voted.
+      type: Boolean
+    - contextPath: PrismaAIRs.RedTeamSentiment.down_vote
+      description: Whether the report was down-voted.
+      type: Boolean
+  - name: prisma-airs-redteam-sentiment-update
+    description: Update the sentiment (up/down-vote) for a Red Team scan report.
+    arguments:
+    - name: job_id
+      required: true
+      description: The job UUID of the scan report to vote on.
+    - name: vote
+      required: true
+      auto: PREDEFINED
+      predefined:
+      - up
+      - down
+      description: The vote to record for the report. One of "up" or "down".
+    outputs:
+    - contextPath: PrismaAIRs.RedTeamSentiment.job_id
+      description: The job UUID the sentiment applies to.
+      type: String
+    - contextPath: PrismaAIRs.RedTeamSentiment.up_vote
+      description: Whether the report was up-voted.
+      type: Boolean
+    - contextPath: PrismaAIRs.RedTeamSentiment.down_vote
+      description: Whether the report was down-voted.
+      type: Boolean
   dockerimage: demisto/python3:3.10.14.95956
   runonce: false
   script: '-'

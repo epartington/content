@@ -5748,3 +5748,80 @@ Add an allowed value to an existing custom-attack property name.
 >|Property Name|Property Value|Message|Status|
 >|---|---|---|---|
 >| severity | critical | Property value 'critical' created successfully | 200 |
+
+### prisma-airs-redteam-sentiment-get
+
+***
+Get the sentiment (up/down-vote) recorded for a Red Team scan report. Read-only.
+
+#### Base Command
+
+`prisma-airs-redteam-sentiment-get`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| job_id | The job UUID of the scan report to get sentiment for. | Required |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamSentiment.job_id | String | The job UUID the sentiment applies to. |
+| PrismaAIRs.RedTeamSentiment.up_vote | Boolean | Whether the report was up-voted. |
+| PrismaAIRs.RedTeamSentiment.down_vote | Boolean | Whether the report was down-voted. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-sentiment-get job_id="87dcf504-3e57-486a-b6a0-69a4ff896130"
+```
+
+#### Human Readable Output
+
+>### Red Team Report Sentiment: 87dcf504-3e57-486a-b6a0-69a4ff896130
+>
+>|Job Id|Up Vote|Down Vote|
+>|---|---|---|
+>| 87dcf504-3e57-486a-b6a0-69a4ff896130 | true | false |
+
+### prisma-airs-redteam-sentiment-update
+
+***
+Update the sentiment (up/down-vote) for a Red Team scan report.
+
+> **Note:** Up-vote and down-vote are mutually exclusive — recording one clears the other.
+
+#### Base Command
+
+`prisma-airs-redteam-sentiment-update`
+
+#### Input
+
+| **Argument Name** | **Description** | **Required** |
+| --- | --- | --- |
+| job_id | The job UUID of the scan report to vote on. | Required |
+| vote | The vote to record for the report. One of "up" or "down". Possible values are: up, down. | Required |
+
+#### Context Output
+
+| **Path** | **Type** | **Description** |
+| --- | --- | --- |
+| PrismaAIRs.RedTeamSentiment.job_id | String | The job UUID the sentiment applies to. |
+| PrismaAIRs.RedTeamSentiment.up_vote | Boolean | Whether the report was up-voted. |
+| PrismaAIRs.RedTeamSentiment.down_vote | Boolean | Whether the report was down-voted. |
+
+#### Command example
+
+```
+!prisma-airs-redteam-sentiment-update job_id="87dcf504-3e57-486a-b6a0-69a4ff896130" vote="up"
+```
+
+#### Human Readable Output
+
+>### Red Team Report Sentiment Updated: 87dcf504-3e57-486a-b6a0-69a4ff896130
+>
+>|Job Id|Up Vote|Down Vote|
+>|---|---|---|
+>| 87dcf504-3e57-486a-b6a0-69a4ff896130 | true | false |

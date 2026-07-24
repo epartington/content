@@ -62,3 +62,4 @@
 !prisma-airs-redteam-targets-templates
 !prisma-airs-redteam-properties-list
 !prisma-airs-redteam-properties-values property_name="Severity"
+!prisma-airs-redteam-sentiment-get job_id="87dcf504-3e57-486a-b6a0-69a4ff896130"

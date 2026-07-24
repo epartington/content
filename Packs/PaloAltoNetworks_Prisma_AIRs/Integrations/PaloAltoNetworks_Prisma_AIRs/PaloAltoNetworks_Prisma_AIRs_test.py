@@ -118,6 +118,8 @@ from PaloAltoNetworks_Prisma_AIRs import (
     redteam_properties_create_command,
     redteam_properties_list_command,
     redteam_properties_values_command,
+    redteam_sentiment_get_command,
+    redteam_sentiment_update_command,
     redteam_targets_metadata_command,
     redteam_targets_templates_command,
     redteam_targets_validate_auth_command,
@@ -1145,6 +1147,88 @@ class TestCommands:
         assert kwargs["url_suffix"] == "/v1/custom-attack/property-values"
         assert kwargs["json_data"] == {"property_name": "severity", "property_value": "critical"}
         assert kwargs["use_redteam_mgmt"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_sentiment_get_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam sentiment get command.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"job_id": "job-1", "up_vote": True}
+
+        result = redteam_sentiment_get_command(mock_client, {"job_id": "job-1"})
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamSentiment"
+        assert result.outputs_key_field == "job_id"
+        assert result.outputs["job_id"] == "job-1"
+        assert result.outputs["up_vote"] is True
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "GET"
+        assert kwargs["url_suffix"] == "/v1/sentiment/job-1"
+        assert kwargs["use_redteam_data"] is True
+
+    def test_redteam_sentiment_get_requires_job_id(self, mock_client: Client) -> None:
+        """Test redteam sentiment get command raises when job_id is missing.
+
+        Args:
+            mock_client: Mock client fixture.
+        """
+        with pytest.raises(ValueError, match="job_id"):
+            redteam_sentiment_get_command(mock_client, {})
+
+    @patch.object(Client, "http_request")
+    def test_redteam_sentiment_update_up_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam sentiment update command with an up-vote.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        mock_http.return_value = {"job_id": "job-1", "up_vote": True}
+
+        result = redteam_sentiment_update_command(mock_client, {"job_id": "job-1", "vote": "up"})
+
+        assert result.outputs_prefix == "PrismaAIRs.RedTeamSentiment"
+        assert result.outputs["job_id"] == "job-1"
+        assert result.outputs["up_vote"] is True
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["method"] == "POST"
+        assert kwargs["url_suffix"] == "/v1/sentiment"
+        assert kwargs["json_data"] == {"job_id": "job-1", "up_vote": True}
+        assert kwargs["use_redteam_data"] is True
+
+    @patch.object(Client, "http_request")
+    def test_redteam_sentiment_update_down_command(self, mock_http: Mock, mock_client: Client) -> None:
+        """Test redteam sentiment update command with a down-vote and empty API echo.
+
+        Args:
+            mock_http: Mocked http_request method.
+            mock_client: Mock client fixture.
+        """
+        # API echoes an empty body; command should fall back to the requested vote.
+        mock_http.return_value = {}
+
+        result = redteam_sentiment_update_command(mock_client, {"job_id": "job-2", "vote": "down"})
+
+        assert result.outputs["job_id"] == "job-2"
+        assert result.outputs["down_vote"] is True
+        assert result.outputs["up_vote"] is False
+
+        _, kwargs = mock_http.call_args
+        assert kwargs["json_data"] == {"job_id": "job-2", "down_vote": True}
+
+    def test_redteam_sentiment_update_requires_vote(self, mock_client: Client) -> None:
+        """Test redteam sentiment update command raises for a missing/invalid vote.
+
+        Args:
+            mock_client: Mock client fixture.
+        """
+        with pytest.raises(ValueError, match="vote"):
+            redteam_sentiment_update_command(mock_client, {"job_id": "job-1"})
 
     @patch.object(Client, "http_request")
     def test_runtime_dlp_profiles_delete_command(self, mock_http: Mock, mock_client: Client) -> None:
